@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DEMO VS REP · ONLINE</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a3a 0%, #2c3e50 100%);
+            color: white;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: gold;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px rgba(255,215,0,0.3);
+            font-size: clamp(24px, 5vw, 48px);
+        }
+        
+        .lobby {
+            background: rgba(42, 58, 74, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            border: 3px solid gold;
+            max-width: 600px;
+            margin: 0 auto;
+            backdrop-filter: blur(10px);
+        }
+        
+        .code {
+            font-size: clamp(32px, 8vw, 48px);
+            text-align: center;
+            letter-spacing: 10px;
+            background: #1a2a3a;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            color: gold;
+            font-family: monospace;
+        }
+        
+        .players {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .player {
+            background: #3a4a5a;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid gray;
+            transition: 0.2s;
+        }
+        
+        .player.ready {
+            border-color: #27ae60;
+            box-shadow: 0 0 15px rgba(39, 174, 96, 0.3);
+        }
+        
+        .player.host {
+            border-color: #e74c3c;
+        }
+        
+        .ready-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #e74c3c;
+            margin: 10px auto;
+            transition: 0.2s;
+        }
+        
+        .ready-dot.green {
+            background: #27ae60;
+        }
+        
+        button {
+            background: gold;
+            color: #1a2a3a;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(255,215,0,0.3);
+            border-color: white;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .ready-btn {
+            padding: 15px 40px;
+            font-size: 18px;
+        }
+        
+        .ready-btn.ready {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .ready-btn.not-ready {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .game {
+            display: none;
+        }
+        
+        .top-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(42, 58, 74, 0.95);
+            padding: 15px 25px;
+            border-radius: 50px;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        
+        .scores {
+            font-size: clamp(18px, 3vw, 24px);
+        }
+        
+        .dem {
+            color: #3498db;
+            text-shadow: 0 0 10px rgba(52,152,219,0.5);
+        }
+        
+        .rep {
+            color: #e74c3c;
+            text-shadow: 0 0 10px rgba(231,76,60,0.5);
+        }
+        
+        .turn {
+            background: gold;
+            color: #1a2a3a;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+        }
+        
+        .map-container {
+            background: #1e3b4f;
+            padding: 20px;
+            border-radius: 20px;
+            border: 3px solid gold;
+            margin-bottom: 20px;
+        }
+        
+        .map {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            gap: 5px;
+            background: #2c4b60;
+            padding: 15px;
+            border-radius: 15px;
+        }
+        
+        .state {
+            background: #3a5a6a;
+            border: 2px solid gold;
+            border-radius: 8px;
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(8px, 2vw, 12px);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            font-weight: bold;
+        }
+        
+        .state:hover {
+            transform: scale(1.05);
+            z-index: 10;
+            box-shadow: 0 0 20px gold;
+        }
+        
+        .state.dem {
+            background: #3498db;
+        }
+        
+        .state.rep {
+            background: #e74c3c;
+        }
+        
+        .state.small {
+            border-color: #f1c40f;
+            border-width: 3px;
+        }
+        
+        .ability-icon {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 10px;
+        }
+        
+        .panels {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .panels {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .action-panel, .players-panel {
+            background: rgba(42, 58, 74, 0.95);
+            padding: 20px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid gold;
+        }
+        
+        .player-card {
+            background: #3a4a5a;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 12px;
+            border-left: 5px solid gray;
+            position: relative;
+            transition: 0.2s;
+        }
+        
+        .player-card:hover {
+            transform: translateX(5px);
+            background: #4a5a6a;
+        }
+        
+        .player-card.democrat {
+            border-left-color: #3498db;
+        }
+        
+        .player-card.republican {
+            border-left-color: #e74c3c;
+        }
+        
+        .player-card.dictator {
+            border-left-color: #2c3e50;
+        }
+        
+        .player-card.assistant {
+            border-left-color: #27ae60;
+        }
+        
+        .player-card.current {
+            border: 2px solid gold;
+            box-shadow: 0 0 20px gold;
+        }
+        
+        .role-badge {
+            background: gold;
+            color: #1a2a3a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: inline-block;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+        
+        .role-hidden {
+            filter: blur(5px);
+            background: #7f8c8d;
+            color: transparent;
+            user-select: none;
+            cursor: default;
+        }
+        
+        .profession-badge {
+            background: linear-gradient(135deg, #f1c40f, #e67e22);
+            color: #1a2a3a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        
+        .cards {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .card {
+            background: white;
+            color: #1a2a3a;
+            padding: 20px;
+            border-radius: 15px;
+            width: 120px;
+            text-align: center;
+            cursor: pointer;
+            border: 3px solid gold;
+            font-weight: bold;
+            transition: 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .card:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 15px 30px rgba(255,215,0,0.4);
+        }
+        
+        .card.selected {
+            border-color: #e74c3c;
+            transform: scale(1.1);
+            box-shadow: 0 0 30px #e74c3c;
+        }
+        
+        .card.dem {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .card.rep {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+        
+        .card.state-card {
+            background: linear-gradient(135deg, #34495e, #2c3e50);
+            color: white;
+        }
+        
+        .log {
+            background: #1a2a3a;
+            padding: 15px;
+            border-radius: 15px;
+            margin-top: 20px;
+            height: 150px;
+            overflow-y: auto;
+            font-size: 12px;
+            border: 1px solid gold;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.97);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: #2a3a4a;
+            padding: 40px;
+            border-radius: 30px;
+            border: 4px solid gold;
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 0 50px rgba(255,215,0,0.3);
+        }
+        
+        .big-role {
+            font-size: clamp(36px, 8vw, 72px);
+            margin: 20px;
+            color: gold;
+            text-shadow: 0 0 20px gold;
+        }
+        
+        input {
+            background: #3a4a5a;
+            border: 2px solid gold;
+            color: white;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 16px;
+            width: 100%;
+            max-width: 300px;
+            margin: 10px 0;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #f1c40f;
+            box-shadow: 0 0 20px gold;
+        }
+        
+        label {
+            color: gold;
+            font-weight: bold;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border: 8px solid gold;
+            border-top: 8px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 30px;
+        }
+        
+        .loading-text {
+            font-size: clamp(24px, 5vw, 48px);
+            color: gold;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .choice-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .choice-btn {
+            background: #3a4a5a;
+            border: 2px solid gold;
+            border-radius: 15px;
+            padding: 15px;
+            cursor: pointer;
+            transition: 0.3s;
+            color: white;
+        }
+        
+        .choice-btn:hover {
+            background: #4a5a6a;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px gold;
+        }
+        
+        .party-badge-large {
+            display: inline-block;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        
+        .party-badge-large.dem {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .party-badge-large.rep {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">LOADING...</div>
+        <div class="loading-subtext" id="loadingMessage">Preparing next round</div>
+    </div>
+
+    <div class="container">
+        <h1>🇺🇸 DEMO VS REP · ONLINE 🇺🇸</h1>
+        
+        <div id="menu" class="lobby" style="text-align: center;">
+            <h2>MAIN MENU</h2>
+            <div style="margin: 30px;">
+                <button onclick="showSolo()" style="font-size: 24px; padding: 20px 40px;">🎮 SOLO</button>
+            </div>
+            <div style="margin: 30px;">
+                <button onclick="showMultiplayer()" style="font-size: 24px; padding: 20px 40px;">👥 MULTIPLAYER</button>
+            </div>
+        </div>
+        
+        <div id="soloMenu" class="lobby" style="display: none;">
+            <h2>SOLO GAME</h2>
+            <div style="margin: 20px;">
+                <label>Your Name: </label>
+                <input type="text" id="soloName" value="You">
+            </div>
+            <div class="bot-selector" style="margin: 30px;">
+                <label>Bots (2-5): </label>
+                <input type="number" id="soloBots" min="2" max="5" value="3" style="width: 80px;">
+            </div>
+            <button onclick="startSoloGame()" style="font-size: 20px; padding: 15px 30px;">START</button>
+            <button onclick="backToMenu()" style="margin-top: 20px;">BACK</button>
+        </div>
+        
+        <div id="multiMenu" class="lobby" style="display: none;">
+            <h2>MULTIPLAYER</h2>
+            <div style="margin: 30px;">
+                <button onclick="showHost()" style="font-size: 20px; padding: 15px 30px;">🎮 HOST GAME</button>
+            </div>
+            <div style="margin: 30px;">
+                <button onclick="showJoin()" style="font-size: 20px; padding: 15px 30px;">🔑 JOIN GAME</button>
+            </div>
+            <button onclick="backToMenu()">BACK</button>
+        </div>
+        
+        <div id="hostMenu" class="lobby" style="display: none;">
+            <h2>HOST GAME</h2>
+            <div style="margin: 20px;">
+                <label>Your Name: </label>
+                <input type="text" id="hostName" value="Host">
+            </div>
+            <div class="bot-selector" style="margin: 30px;">
+                <label>Bots: </label>
+                <input type="number" id="hostBots" min="0" max="5" value="0" style="width: 80px;">
+            </div>
+            <button onclick="createParty()" style="font-size: 20px; padding: 15px 30px;">CREATE</button>
+            <button onclick="backToMulti()">BACK</button>
+        </div>
+        
+        <div id="joinMenu" class="lobby" style="display: none;">
+            <h2>JOIN GAME</h2>
+            <div style="margin: 20px;">
+                <label>Your Name: </label>
+                <input type="text" id="joinName" value="Player">
+            </div>
+            <div style="margin: 30px;">
+                <input type="text" id="joinCodeInput" placeholder="Enter 6-digit code" maxlength="6" style="text-align: center; font-size: 24px;">
+            </div>
+            <button onclick="joinParty()" style="font-size: 20px; padding: 15px 30px;">JOIN</button>
+            <button onclick="backToMulti()">BACK</button>
+        </div>
+        
+        <div id="lobby" class="lobby" style="display: none;">
+            <h2>LOBBY</h2>
+            <div class="code" id="partyCode">------</div>
+            <div class="players" id="playersList"></div>
+            <div style="text-align: center; margin: 20px;">
+                <button class="ready-btn not-ready" id="readyBtn" onclick="toggleReady()">NOT READY</button>
+                <button id="startBtn" onclick="startMultiplayerGame()" disabled>START</button>
+            </div>
+            <div style="text-align: center;" id="addBotDiv">
+                <button onclick="addBotToLobby()">➕ ADD BOT</button>
+            </div>
+        </div>
+        
+        <div id="game" class="game">
+            <div class="top-bar">
+                <div class="scores">
+                    <span class="dem">DEM: <span id="demScore">0</span></span> | 
+                    <span class="rep">REP: <span id="repScore">0</span></span>
+                </div>
+                <div class="turn" id="turnDisplay">Round 1</div>
+            </div>
+            
+            <div class="map-container">
+                <div class="map" id="map"></div>
+            </div>
+            
+            <div class="panels">
+                <div class="action-panel" id="actionPanel">
+                    <h3 id="actionTitle">Waiting for your turn...</h3>
+                    <div id="actionContent"></div>
+                </div>
+                
+                <div class="players-panel">
+                    <h3>Players</h3>
+                    <div id="gamePlayers"></div>
+                    <div id="dictatorMissions" style="margin-top: 20px;"></div>
+                </div>
+            </div>
+            
+            <div class="log" id="gameLog"></div>
+        </div>
+    </div>
+    
+    <div id="roleModal" class="modal">
+        <div class="modal-content">
+            <h2>🎭 YOUR SECRET ROLE</h2>
+            <div class="big-role" id="playerRole"></div>
+            <div id="roleInfo"></div>
+            <div id="missionsList" style="margin-top: 20px;"></div>
+            <button onclick="closeRoleModal()">START GAME</button>
+        </div>
+    </div>
+    
+    <div id="abilityModal" class="modal">
+        <div class="modal-content">
+            <h2 id="abilityTitle">✨ ABILITY ACTIVATED</h2>
+            <div id="abilityContent"></div>
+            <div id="abilityChoices" class="choice-buttons"></div>
+            <button onclick="closeAbilityModal()" id="abilityCloseBtn">CLOSE</button>
+        </div>
+    </div>
+    
+    <div id="roundEndModal" class="modal">
+        <div class="modal-content">
+            <h2>🏆 ROUND COMPLETE</h2>
+            <div id="roundEndContent"></div>
+            <button onclick="closeRoundEndModal()">NEXT ROUND</button>
+        </div>
+    </div>
+
+    <script>
+        let players = [];
+        let currentPlayerId = 1;
+        let isHost = false;
+        let gameStarted = false;
+        let partyCode = null;
+        let currentRound = 1;
+        let currentTurn = null;
+        let turnIndex = 0;
+        const turnOrder = ['Cartographer', 'President-Rep', 'President-Dem', 'Governor-Rep', 'Governor-Dem', 'Judge'];
+        let roundRoles = [];
+        let capturedStates = {};
+        let gameLog = [];
+        let currentState = null;
+        let stateOptions = [];
+        let presidentRepLaws = [];
+        let presidentDemLaws = [];
+        let governorRepLaws = [];
+        let governorDemLaws = [];
+        let judgeRepLaw = null;
+        let judgeDemLaw = null;
+        let selectedLaw = null;
+        let isProcessing = false;
+        let roundEndTimeout = null;
+        let isLoading = false;
+        let dictatorMissions = [
+            { id: 1, name: 'Предатель', description: 'Будучи Президентом, передать губернатору закон чужой партии', completed: false },
+            { id: 2, name: 'Саботаж', description: 'Будучи Губернатором, передать судье закон чужой партии', completed: false },
+            { id: 3, name: 'Аутсайдер', description: 'Будучи Судьёй, выбрать закон за партию, которая проигрывает', completed: false },
+            { id: 4, name: 'Скупой', description: 'Будучи Картографом, выбрать самый дешёвый штат', completed: false },
+            { id: 5, name: 'Шпион', description: 'Активировать способность Investigation или Party Check', completed: false }
+        ];
+        let syncInterval = null;
+        let lastSync = Date.now();
+        let activeAbilities = {
+            investigation: null,
+            veto: false,
+            spy: null,
+            changeCourse: null,
+            partyCheck: null
+        };
+        
+        const abilityDescriptions = {
+            'Investigation': '🔍 Посмотреть роль любого игрока',
+            'Veto': '🚫 Президент проигравшей партии сбросит на 1 закон больше в следующем раунде',
+            'Spy': '🕵️ Посмотреть следующий штат в колоде',
+            'Change Course': '🔄 Следующий Картограф выбирает из самых дорогих или дешёвых штатов',
+            'Party Check': '👁️ Узнать партию любого игрока'
+        };
+        
+        const states = [
+            { name: 'WA', full: 'Washington', points: 12, ability: null },
+            { name: 'OR', full: 'Oregon', points: 7, ability: null },
+            { name: 'CA', full: 'California', points: 55, ability: null },
+            { name: 'ID', full: 'Idaho', points: 4, ability: 'Change Course' },
+            { name: 'NV', full: 'Nevada', points: 6, ability: null },
+            { name: 'UT', full: 'Utah', points: 6, ability: null },
+            { name: 'AZ', full: 'Arizona', points: 11, ability: null },
+            { name: 'MT', full: 'Montana', points: 3, ability: 'Investigation' },
+            { name: 'WY', full: 'Wyoming', points: 3, ability: 'Veto' },
+            { name: 'CO', full: 'Colorado', points: 9, ability: null },
+            { name: 'NM', full: 'New Mexico', points: 5, ability: 'Party Check' },
+            { name: 'ND', full: 'North Dakota', points: 3, ability: 'Investigation' },
+            { name: 'SD', full: 'South Dakota', points: 3, ability: 'Veto' },
+            { name: 'NE', full: 'Nebraska', points: 5, ability: 'Party Check' },
+            { name: 'KS', full: 'Kansas', points: 6, ability: null },
+            { name: 'OK', full: 'Oklahoma', points: 7, ability: null },
+            { name: 'TX', full: 'Texas', points: 38, ability: null },
+            { name: 'MN', full: 'Minnesota', points: 10, ability: null },
+            { name: 'IA', full: 'Iowa', points: 6, ability: null },
+            { name: 'MO', full: 'Missouri', points: 10, ability: null },
+            { name: 'WI', full: 'Wisconsin', points: 10, ability: null },
+            { name: 'IL', full: 'Illinois', points: 20, ability: null },
+            { name: 'MI', full: 'Michigan', points: 16, ability: null },
+            { name: 'IN', full: 'Indiana', points: 11, ability: null },
+            { name: 'OH', full: 'Ohio', points: 18, ability: null },
+            { name: 'KY', full: 'Kentucky', points: 8, ability: null },
+            { name: 'TN', full: 'Tennessee', points: 11, ability: null },
+            { name: 'AR', full: 'Arkansas', points: 6, ability: null },
+            { name: 'LA', full: 'Louisiana', points: 8, ability: null },
+            { name: 'MS', full: 'Mississippi', points: 6, ability: null },
+            { name: 'AL', full: 'Alabama', points: 9, ability: null },
+            { name: 'GA', full: 'Georgia', points: 16, ability: null },
+            { name: 'FL', full: 'Florida', points: 29, ability: null },
+            { name: 'SC', full: 'South Carolina', points: 9, ability: null },
+            { name: 'NC', full: 'North Carolina', points: 15, ability: null },
+            { name: 'VA', full: 'Virginia', points: 13, ability: null },
+            { name: 'WV', full: 'West Virginia', points: 5, ability: 'Party Check' },
+            { name: 'MD', full: 'Maryland', points: 10, ability: null },
+            { name: 'DE', full: 'Delaware', points: 3, ability: 'Veto' },
+            { name: 'NJ', full: 'New Jersey', points: 14, ability: null },
+            { name: 'PA', full: 'Pennsylvania', points: 20, ability: null },
+            { name: 'NY', full: 'New York', points: 29, ability: null },
+            { name: 'VT', full: 'Vermont', points: 3, ability: 'Investigation' },
+            { name: 'NH', full: 'New Hampshire', points: 4, ability: 'Spy' },
+            { name: 'ME', full: 'Maine', points: 4, ability: 'Spy' },
+            { name: 'MA', full: 'Massachusetts', points: 11, ability: null },
+            { name: 'CT', full: 'Connecticut', points: 7, ability: null },
+            { name: 'RI', full: 'Rhode Island', points: 4, ability: 'Spy' },
+            { name: 'AK', full: 'Alaska', points: 3, ability: 'Investigation' },
+            { name: 'HI', full: 'Hawaii', points: 4, ability: 'Spy' }
+        ];
+        
+        function showSolo() {
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('soloMenu').style.display = 'block';
+        }
+        
+        function showMultiplayer() {
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('multiMenu').style.display = 'block';
+        }
+        
+        function showHost() {
+            document.getElementById('multiMenu').style.display = 'none';
+            document.getElementById('hostMenu').style.display = 'block';
+        }
+        
+        function showJoin() {
+            document.getElementById('multiMenu').style.display = 'none';
+            document.getElementById('joinMenu').style.display = 'block';
+        }
+        
+        function backToMenu() {
+            document.getElementById('soloMenu').style.display = 'none';
+            document.getElementById('multiMenu').style.display = 'none';
+            document.getElementById('hostMenu').style.display = 'none';
+            document.getElementById('joinMenu').style.display = 'none';
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('game').style.display = 'none';
+            document.getElementById('menu').style.display = 'block';
+        }
+        
+        function backToMulti() {
+            document.getElementById('hostMenu').style.display = 'none';
+            document.getElementById('joinMenu').style.display = 'none';
+            document.getElementById('multiMenu').style.display = 'block';
+        }
+        
+        function startSoloGame() {
+            const playerName = document.getElementById('soloName').value || 'You';
+            const botCount = parseInt(document.getElementById('soloBots').value);
+            
+            players = [];
+            players.push({ id: 1, name: playerName, isBot: false, role: null, party: null, hasActed: false });
+            
+            for (let i = 2; i <= botCount + 1; i++) {
+                players.push({ id: i, name: `Bot ${i-1}`, isBot: true, role: null, party: null, hasActed: false });
+            }
+            
+            currentPlayerId = 1;
+            isHost = true;
+            startGame();
+        }
+        
+        function createParty() {
+            const playerName = document.getElementById('hostName').value || 'Host';
+            const botCount = parseInt(document.getElementById('hostBots').value);
+            partyCode = Math.floor(100000 + Math.random() * 900000).toString();
+            
+            players = [{ id: 1, name: playerName, isBot: false, role: null, party: null, hasActed: false, ready: false }];
+            
+            for (let i = 2; i <= 1 + botCount; i++) {
+                players.push({ id: i, name: `Bot ${i-1}`, isBot: true, role: null, party: null, hasActed: false, ready: true });
+            }
+            
+            currentPlayerId = 1;
+            isHost = true;
+            
+            document.getElementById('hostMenu').style.display = 'none';
+            document.getElementById('lobby').style.display = 'block';
+            
+            updateLobby();
+            broadcastGameState();
+            startSync();
+            
+            alert(`Game created! Share code: ${partyCode}\nPlayers can join with this code.`);
+        }
+        
+        function joinParty() {
+            const playerName = document.getElementById('joinName').value || 'Player';
+            const code = document.getElementById('joinCodeInput').value;
+            if (code.length === 6) {
+                partyCode = code;
+                
+                const saved = localStorage.getItem(`game_${partyCode}`);
+                if (saved) {
+                    const state = JSON.parse(saved);
+                    players = state.players;
+                } else {
+                    players = [{ id: 1, name: 'Host', isBot: false, role: null, party: null, hasActed: false, ready: true }];
+                }
+                
+                const newId = players.length + 1;
+                players.push({ 
+                    id: newId, 
+                    name: playerName, 
+                    isBot: false, 
+                    role: null, 
+                    party: null, 
+                    hasActed: false, 
+                    ready: false 
+                });
+                
+                currentPlayerId = newId;
+                isHost = false;
+                
+                document.getElementById('joinMenu').style.display = 'none';
+                document.getElementById('lobby').style.display = 'block';
+                
+                updateLobby();
+                broadcastGameState();
+                startSync();
+            }
+        }
+        
+        function updateLobby() {
+            document.getElementById('partyCode').textContent = partyCode;
+            
+            let html = '';
+            players.forEach(p => {
+                html += `
+                    <div class="player ${p.ready ? 'ready' : ''} ${p.id === 1 ? 'host' : ''}">
+                        <div>${p.name} ${p.isBot ? '🤖' : ''} ${p.id === 1 ? '👑' : ''}</div>
+                        <div class="ready-dot ${p.ready ? 'green' : ''}"></div>
+                    </div>
+                `;
+            });
+            document.getElementById('playersList').innerHTML = html;
+            
+            const player = players.find(p => p.id === currentPlayerId);
+            if (player) {
+                const btn = document.getElementById('readyBtn');
+                btn.className = `ready-btn ${player.ready ? 'ready' : 'not-ready'}`;
+                btn.textContent = player.ready ? '✅ READY' : '⭕ NOT READY';
+            }
+            
+            document.getElementById('addBotDiv').style.display = isHost ? 'block' : 'none';
+            
+            const startBtn = document.getElementById('startBtn');
+            if (isHost) {
+                const allReady = players.filter(p => !p.isBot).every(p => p.ready) && players.length >= 2;
+                startBtn.disabled = !allReady;
+            } else {
+                startBtn.disabled = true;
+            }
+        }
+        
+        function toggleReady() {
+            const player = players.find(p => p.id === currentPlayerId);
+            if (player && !player.isBot) {
+                player.ready = !player.ready;
+                updateLobby();
+                broadcastGameState();
+            }
+        }
+        
+        function addBotToLobby() {
+            if (players.length < 6 && isHost) {
+                players.push({
+                    id: players.length + 1,
+                    name: `Bot ${players.length + 1}`,
+                    isBot: true,
+                    role: null,
+                    party: null,
+                    hasActed: false,
+                    ready: true
+                });
+                updateLobby();
+                broadcastGameState();
+            }
+        }
+        
+        function startMultiplayerGame() {
+            if (isHost) {
+                startGame();
+            }
+        }
+        
+        function startSync() {
+            if (syncInterval) clearInterval(syncInterval);
+            syncInterval = setInterval(checkForUpdates, 300);
+        }
+        
+        function broadcastGameState() {
+            const gameState = {
+                players: players,
+                partyCode: partyCode,
+                gameStarted: gameStarted,
+                currentRound: currentRound,
+                currentTurn: currentTurn,
+                roundRoles: roundRoles,
+                capturedStates: capturedStates,
+                currentState: currentState,
+                stateOptions: stateOptions,
+                presidentRepLaws: presidentRepLaws,
+                presidentDemLaws: presidentDemLaws,
+                governorRepLaws: governorRepLaws,
+                governorDemLaws: governorDemLaws,
+                judgeRepLaw: judgeRepLaw,
+                judgeDemLaw: judgeDemLaw,
+                selectedLaw: selectedLaw,
+                dictatorMissions: dictatorMissions,
+                activeAbilities: activeAbilities,
+                gameLog: gameLog,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(`game_${partyCode}`, JSON.stringify(gameState));
+        }
+        
+        function checkForUpdates() {
+            const saved = localStorage.getItem(`game_${partyCode}`);
+            if (saved) {
+                const state = JSON.parse(saved);
+                if (state.timestamp > lastSync) {
+                    lastSync = state.timestamp;
+                    
+                    const oldId = currentPlayerId;
+                    const oldGameStarted = gameStarted;
+                    
+                    players = state.players;
+                    gameStarted = state.gameStarted;
+                    currentRound = state.currentRound;
+                    currentTurn = state.currentTurn;
+                    roundRoles = state.roundRoles;
+                    capturedStates = state.capturedStates;
+                    currentState = state.currentState;
+                    stateOptions = state.stateOptions || [];
+                    presidentRepLaws = state.presidentRepLaws || [];
+                    presidentDemLaws = state.presidentDemLaws || [];
+                    governorRepLaws = state.governorRepLaws || [];
+                    governorDemLaws = state.governorDemLaws || [];
+                    judgeRepLaw = state.judgeRepLaw;
+                    judgeDemLaw = state.judgeDemLaw;
+                    selectedLaw = state.selectedLaw;
+                    dictatorMissions = state.dictatorMissions || [];
+                    activeAbilities = state.activeAbilities || {};
+                    gameLog = state.gameLog || [];
+                    
+                    currentPlayerId = oldId;
+                    
+                    if (gameStarted) {
+                        document.getElementById('lobby').style.display = 'none';
+                        document.getElementById('game').style.display = 'block';
+                        updateGameDisplay();
+                        
+                        if (!oldGameStarted && gameStarted) {
+                            setTimeout(() => showRoleModal(), 500);
+                        }
+                    } else {
+                        document.getElementById('lobby').style.display = 'block';
+                        document.getElementById('game').style.display = 'none';
+                        updateLobby();
+                    }
+                }
+            }
+        }
+        
+        function startGame() {
+            const roles = [
+                { role: 'Democrat', party: 'democrat' },
+                { role: 'Democrat', party: 'democrat' },
+                { role: 'Republican', party: 'republican' },
+                { role: 'Republican', party: 'republican' },
+                { role: 'Dictator', party: 'dictator' },
+                { role: 'Assistant', party: 'assistant' }
+            ];
+            
+            for (let i = roles.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [roles[i], roles[j]] = [roles[j], roles[i]];
+            }
+            
+            players.forEach((p, i) => {
+                if (i < roles.length) {
+                    p.role = roles[i].role;
+                    p.party = roles[i].party;
+                }
+            });
+            
+            const dictatorId = players.find(p => p.role === 'Dictator')?.id;
+            players.forEach(p => {
+                if (p.role === 'Assistant') {
+                    p.knownDictator = dictatorId;
+                }
+            });
+            
+            gameStarted = true;
+            
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            
+            showRoleModal();
+            startNewRound();
+            broadcastGameState();
+        }
+        
+        function showRoleModal() {
+            const player = players.find(p => p.id === currentPlayerId);
+            if (!player) return;
+            
+            document.getElementById('playerRole').innerHTML = player.role;
+            
+            let info = `<p>Party: ${player.party}</p>`;
+            let missionsHtml = '';
+            
+            if (player.role === 'Assistant') {
+                const dictator = players.find(p => p.id === player.knownDictator);
+                info += `<p>🔍 The Dictator is: <strong>${dictator?.name}</strong></p>`;
+            } else if (player.role === 'Dictator') {
+                missionsHtml = '<h3>🎯 Your Missions (complete 3 to win):</h3>';
+                dictatorMissions.forEach(m => {
+                    missionsHtml += `
+                        <div class="mission-item ${m.completed ? 'completed' : ''}">
+                            <strong>${m.name}</strong>: ${m.description}
+                            ${m.completed ? ' ✓ COMPLETED' : ''}
+                        </div>
+                    `;
+                });
+            } else if (player.role === 'Democrat') {
+                const dems = players.filter(p => p.party === 'democrat' && p.id !== player.id);
+                if (dems.length) {
+                    info += `<p>🔵 Fellow Democrats: ${dems.map(p => p.name).join(', ')}</p>`;
+                }
+            } else if (player.role === 'Republican') {
+                const reps = players.filter(p => p.party === 'republican' && p.id !== player.id);
+                if (reps.length) {
+                    info += `<p>🔴 Fellow Republicans: ${reps.map(p => p.name).join(', ')}</p>`;
+                }
+            }
+            
+            document.getElementById('roleInfo').innerHTML = info;
+            document.getElementById('missionsList').innerHTML = missionsHtml;
+            document.getElementById('roleModal').style.display = 'flex';
+        }
+        
+        function closeRoleModal() {
+            document.getElementById('roleModal').style.display = 'none';
+        }
+        
+        function closeAbilityModal() {
+            document.getElementById('abilityModal').style.display = 'none';
+        }
+        
+        function closeRoundEndModal() {
+            document.getElementById('roundEndModal').style.display = 'none';
+        }
+        
+        function startNewRound() {
+            console.log('Starting new round', currentRound);
+            
+            document.getElementById('loadingMessage').textContent = `Preparing Round ${currentRound}...`;
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            
+            if (roundEndTimeout) {
+                clearTimeout(roundEndTimeout);
+                roundEndTimeout = null;
+            }
+            
+            const shuffled = [...turnOrder].sort(() => Math.random() - 0.5);
+            roundRoles = [];
+            
+            for (let i = 0; i < players.length && i < turnOrder.length; i++) {
+                roundRoles.push({
+                    role: shuffled[i],
+                    playerId: players[i].id,
+                    playerName: players[i].name,
+                    isBot: players[i].isBot,
+                    hasActed: false
+                });
+            }
+            
+            console.log('Round roles:', roundRoles);
+            
+            turnIndex = 0;
+            currentState = null;
+            stateOptions = [];
+            
+            presidentRepLaws = [];
+            presidentDemLaws = [];
+            governorRepLaws = [];
+            governorDemLaws = [];
+            judgeRepLaw = null;
+            judgeDemLaw = null;
+            selectedLaw = null;
+            isProcessing = false;
+            
+            players.forEach(p => p.hasActed = false);
+            
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                setCurrentTurn(turnOrder[0]);
+                addLog(`Round ${currentRound} started - roles shuffled`);
+                updateGameDisplay();
+                broadcastGameState();
+            }, 1500);
+        }
+        
+        function setCurrentTurn(role) {
+            if (isProcessing) {
+                console.log('Already processing, skipping');
+                return;
+            }
+            
+            isProcessing = true;
+            currentTurn = role;
+            const turnPlayer = roundRoles.find(r => r.role === role);
+            
+            if (turnPlayer) {
+                document.getElementById('turnDisplay').innerHTML = `Round ${currentRound} · ${role}: ${turnPlayer.playerName}`;
+                
+                if (turnPlayer.isBot) {
+                    setTimeout(() => {
+                        doBotTurn();
+                        isProcessing = false;
+                    }, 1500);
+                } else {
+                    isProcessing = false;
+                }
+            } else {
+                console.error('No player found for role:', role);
+                isProcessing = false;
+                nextTurn();
+                return;
+            }
+            
+            updateActionPanel();
+            broadcastGameState();
+        }
+        
+        function doBotTurn() {
+            console.log('Bot turn:', currentTurn);
+            
+            if (currentTurn === 'Cartographer') {
+                let available = states.filter(s => !capturedStates[s.full]);
+                
+                if (activeAbilities.changeCourse) {
+                    if (activeAbilities.changeCourse === 'expensive') {
+                        available.sort((a, b) => b.points - a.points);
+                        available = available.slice(0, 5);
+                    } else {
+                        available.sort((a, b) => a.points - b.points);
+                        available = available.slice(0, 5);
+                    }
+                    activeAbilities.changeCourse = null;
+                }
+                
+                if (available.length >= 3) {
+                    const shuffled = [...available].sort(() => Math.random() - 0.5);
+                    stateOptions = shuffled.slice(0, 3);
+                    currentState = stateOptions[Math.floor(Math.random() * 3)];
+                    addLog(`🤖 Bot Cartographer chose a state (hidden)`);
+                    afterTurn();
+                } else {
+                    afterTurn();
+                }
+            } 
+            else if (currentTurn === 'President-Rep') {
+                presidentRepLaws = [
+                    { party: Math.random() < 0.5 ? 'republican' : 'democrat', selected: false },
+                    { party: Math.random() < 0.5 ? 'republican' : 'democrat', selected: false },
+                    { party: Math.random() < 0.5 ? 'republican' : 'democrat', selected: false }
+                ];
+                presidentRepLaws[0].selected = true;
+                presidentRepLaws[1].selected = true;
+                
+                governorRepLaws = presidentRepLaws.filter(l => l.selected).map(l => ({ party: l.party, selected: false }));
+                
+                addLog(`🤖 Bot President-Rep kept 2 laws, 1 discarded - passed to Governor-Rep`);
+                afterTurn();
+            } 
+            else if (currentTurn === 'President-Dem') {
+                presidentDemLaws = [
+                    { party: Math.random() < 0.5 ? 'democrat' : 'republican', selected: false },
+                    { party: Math.random() < 0.5 ? 'democrat' : 'republican', selected: false },
+                    { party: Math.random() < 0.5 ? 'democrat' : 'republican', selected: false }
+                ];
+                presidentDemLaws[0].selected = true;
+                presidentDemLaws[1].selected = true;
+                
+                governorDemLaws = presidentDemLaws.filter(l => l.selected).map(l => ({ party: l.party, selected: false }));
+                
+                addLog(`🤖 Bot President-Dem kept 2 laws, 1 discarded - passed to Governor-Dem`);
+                afterTurn();
+            } 
+            else if (currentTurn === 'Governor-Rep') {
+                if (governorRepLaws.length > 0) {
+                    governorRepLaws[0].selected = true;
+                    judgeRepLaw = governorRepLaws[0];
+                    addLog(`🤖 Bot Governor-Rep chose 1 law for Judge, 1 discarded`);
+                }
+                afterTurn();
+            } 
+            else if (currentTurn === 'Governor-Dem') {
+                if (governorDemLaws.length > 0) {
+                    governorDemLaws[0].selected = true;
+                    judgeDemLaw = governorDemLaws[0];
+                    addLog(`🤖 Bot Governor-Dem chose 1 law for Judge, 1 discarded`);
+                }
+                afterTurn();
+            } 
+            else if (currentTurn === 'Judge') {
+                if (currentState && judgeRepLaw && judgeDemLaw) {
+                    const choice = Math.random() > 0.5 ? 'republican' : 'democrat';
+                    selectedLaw = choice;
+                    
+                    capturedStates[currentState.full] = choice;
+                    
+                    if (currentState.ability) {
+                        activateAbility(currentState.ability, currentState.full);
+                    }
+                    
+                    const stateData = states.find(s => s.full === currentState.full);
+                    document.getElementById('roundEndContent').innerHTML = `
+                        <h2 style="color: gold;">🏆 ROUND ${currentRound} COMPLETE</h2>
+                        <div style="font-size: 32px; margin: 20px;">${currentState.full}</div>
+                        <div style="font-size: 48px;">${stateData.points} points</div>
+                        <div class="party-badge-large ${choice}">${choice.toUpperCase()}</div>
+                        ${stateData.ability ? `<p>✨ ${stateData.ability}</p>` : ''}
+                    `;
+                    document.getElementById('roundEndModal').style.display = 'flex';
+                    
+                    addLog(`🤖 Bot Judge chose ${choice} - ${currentState.full} captured!`);
+                    updateScores();
+                    
+                    setTimeout(() => {
+                        currentRound++;
+                        startNewRound();
+                        document.getElementById('roundEndModal').style.display = 'none';
+                    }, 4000);
+                }
+            }
+        }
+        
+        function afterTurn() {
+            document.getElementById('loadingMessage').textContent = 'Processing...';
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                nextTurn();
+            }, 1000);
+        }
+        
+        function activateAbility(ability, stateName) {
+            addLog(`✨ Ability activated: ${ability} from ${stateName}`);
+            
+            switch(ability) {
+                case 'Investigation':
+                    showInvestigationModal();
+                    break;
+                case 'Veto':
+                    activeAbilities.veto = true;
+                    addLog(`🚫 Veto will apply next round`);
+                    break;
+                case 'Spy':
+                    showSpyModal();
+                    break;
+                case 'Change Course':
+                    showChangeCourseModal();
+                    break;
+                case 'Party Check':
+                    showPartyCheckModal();
+                    break;
+            }
+            
+            broadcastGameState();
+        }
+        
+        function showInvestigationModal() {
+            const modal = document.getElementById('abilityModal');
+            const title = document.getElementById('abilityTitle');
+            const content = document.getElementById('abilityContent');
+            const choices = document.getElementById('abilityChoices');
+            const closeBtn = document.getElementById('abilityCloseBtn');
+            
+            title.innerHTML = '🔍 INVESTIGATION';
+            content.innerHTML = '<p>Choose a player to see their role:</p>';
+            
+            let buttons = '';
+            players.forEach(p => {
+                if (p.id !== currentPlayerId) {
+                    buttons += `<div class="choice-btn" onclick="investigatePlayer(${p.id})">${p.name}</div>`;
+                }
+            });
+            
+            choices.innerHTML = buttons;
+            closeBtn.style.display = 'none';
+            modal.style.display = 'flex';
+        }
+        
+        function investigatePlayer(playerId) {
+            const player = players.find(p => p.id === playerId);
+            const modal = document.getElementById('abilityModal');
+            const content = document.getElementById('abilityContent');
+            const choices = document.getElementById('abilityChoices');
+            const closeBtn = document.getElementById('abilityCloseBtn');
+            
+            content.innerHTML = `<p style="font-size: 20px;">${player.name}'s role is: <strong>${player.role}</strong></p>`;
+            choices.innerHTML = '';
+            closeBtn.style.display = 'inline-block';
+            
+            addLog(`🔍 Investigation used on ${player.name} - role revealed`);
+        }
+        
+        function showSpyModal() {
+            const modal = document.getElementById('abilityModal');
+            const title = document.getElementById('abilityTitle');
+            const content = document.getElementById('abilityContent');
+            const choices = document.getElementById('abilityChoices');
+            const closeBtn = document.getElementById('abilityCloseBtn');
+            
+            title.innerHTML = '🕵️ SPY';
+            
+            const nextState = states.find(s => !capturedStates[s.full]);
+            if (nextState) {
+                content.innerHTML = `<p style="font-size: 20px;">Next state: <strong>${nextState.full}</strong> (${nextState.points} points)</p>`;
+            } else {
+                content.innerHTML = '<p>No states left</p>';
+            }
+            
+            choices.innerHTML = '';
+            closeBtn.style.display = 'inline-block';
+            modal.style.display = 'flex';
+        }
+        
+        function showChangeCourseModal() {
+            const modal = document.getElementById('abilityModal');
+            const title = document.getElementById('abilityTitle');
+            const content = document.getElementById('abilityContent');
+            const choices = document.getElementById('abilityChoices');
+            const closeBtn = document.getElementById('abilityCloseBtn');
+            
+            title.innerHTML = '🔄 CHANGE COURSE';
+            content.innerHTML = '<p>Choose for next Cartographer:</p>';
+            
+            choices.innerHTML = `
+                <div class="choice-btn" onclick="setChangeCourse('expensive')">Most expensive states</div>
+                <div class="choice-btn" onclick="setChangeCourse('cheap')">Cheapest states</div>
+            `;
+            closeBtn.style.display = 'none';
+            modal.style.display = 'flex';
+        }
+        
+        function setChangeCourse(type) {
+            activeAbilities.changeCourse = type;
+            
+            const modal = document.getElementById('abilityModal');
+            const content = document.getElementById('abilityContent');
+            const choices = document.getElementById('abilityChoices');
+            const closeBtn = document.getElementById('abilityCloseBtn');
+            
+            content.innerHTML = `<p>Next Cartographer will choose from ${type} states</p>`;
+            choices.innerHTML = '';
+            closeBtn.style.display = 'inline-block';
+            
+            addLog(`🔄 Change Course set to ${type} states`);
+            broadcastGameState();
+        }
+        
+        function showPartyCheckModal() {
+            const modal = document.getElementById('abilityModal');
+            const title = document.getElementById('abilityTitle');
+            const content = document.getElementById('abilityContent');
+            const choices = document.getElementById('abilityChoices');
+            const closeBtn = document.getElementById('abilityCloseBtn');
+            
+            title.innerHTML = '👁️ PARTY CHECK';
+            content.innerHTML = '<p>Choose a player to see their party:</p>';
+            
+            let buttons = '';
+            players.forEach(p => {
+                if (p.id !== currentPlayerId) {
+                    buttons += `<div class="choice-btn" onclick="partyCheckPlayer(${p.id})">${p.name}</div>`;
+                }
+            });
+            
+            choices.innerHTML = buttons;
+            closeBtn.style.display = 'none';
+            modal.style.display = 'flex';
+        }
+        
+        function partyCheckPlayer(playerId) {
+            const player = players.find(p => p.id === playerId);
+            const modal = document.getElementById('abilityModal');
+            const content = document.getElementById('abilityContent');
+            const choices = document.getElementById('abilityChoices');
+            const closeBtn = document.getElementById('abilityCloseBtn');
+            
+            content.innerHTML = `<p style="font-size: 20px;">${player.name}'s party is: <strong>${player.party}</strong></p>`;
+            choices.innerHTML = '';
+            closeBtn.style.display = 'inline-block';
+            
+            addLog(`👁️ Party Check used on ${player.name} - party revealed`);
+        }
+        
+        function nextTurn() {
+            turnIndex++;
+            
+            if (turnIndex < turnOrder.length) {
+                setCurrentTurn(turnOrder[turnIndex]);
+            } else {
+                console.log('End of turn order');
+            }
+            
+            updateGameDisplay();
+            broadcastGameState();
+        }
+        
+        function updateGameDisplay() {
+            updateMap();
+            updatePlayersList();
+            updateScores();
+            updateActionPanel();
+        }
+        
+        function updateMap() {
+            const map = document.getElementById('map');
+            let html = '';
+            states.forEach(state => {
+                const captured = capturedStates[state.full];
+                let cls = 'state';
+                if (captured === 'democrat') cls += ' dem';
+                if (captured === 'republican') cls += ' rep';
+                if (state.points <= 5) cls += ' small';
+                const abilityIcon = state.ability ? '<span class="ability-icon">✨</span>' : '';
+                html += `<div class="${cls}" onclick="alert('${state.full}: ${state.points} points\\n${state.ability ? 'Ability: ' + state.ability + '\\n' + abilityDescriptions[state.ability] : 'No ability'}')">${state.name}${abilityIcon}<br><span style="font-size:8px;">${state.points}</span></div>`;
+            });
+            map.innerHTML = html;
+        }
+        
+        function updatePlayersList() {
+            const list = document.getElementById('gamePlayers');
+            let html = '';
+            
+            const currentPlayer = players.find(p => p.id === currentPlayerId);
+            const isSolo = players.every(p => p.isBot || p.id === 1);
+            
+            players.forEach(player => {
+                let roleHtml = '';
+                
+                if (player.id === currentPlayerId) {
+                    roleHtml = `<span class="role-badge">${player.role}</span>`;
+                } 
+                else if (isSolo) {
+                    roleHtml = `<span class="role-badge">${player.role}</span>`;
+                }
+                else if (currentPlayer?.party === player.party && currentPlayer?.party !== 'dictator' && currentPlayer?.party !== 'assistant') {
+                    roleHtml = `<span class="role-badge">${player.role}</span>`;
+                }
+                else if (currentPlayer?.role === 'Assistant' && player.role === 'Dictator') {
+                    roleHtml = `<span class="role-badge">${player.role}</span>`;
+                }
+                else {
+                    roleHtml = `<span class="role-badge role-hidden">????</span>`;
+                }
+                
+                const isTurn = roundRoles.find(r => r.role === currentTurn)?.playerId === player.id;
+                const profession = roundRoles.find(r => r.playerId === player.id)?.role || '';
+                
+                html += `
+                    <div class="player-card ${player.party || ''} ${isTurn ? 'current' : ''}">
+                        <div><b>${player.name}</b> ${player.isBot ? '🤖' : ''}</div>
+                        ${roleHtml}
+                        ${profession ? `<span class="profession-badge">${profession}</span>` : ''}
+                    </div>
+                `;
+            });
+            
+            list.innerHTML = html;
+        }
+        
+        function updateActionPanel() {
+            const title = document.getElementById('actionTitle');
+            const content = document.getElementById('actionContent');
+            
+            const turnPlayer = roundRoles.find(r => r.role === currentTurn);
+            
+            if (!turnPlayer) {
+                title.innerHTML = `Waiting for next player...`;
+                content.innerHTML = '';
+                return;
+            }
+            
+            const isMyTurn = turnPlayer.playerId === currentPlayerId;
+            
+            if (!isMyTurn) {
+                title.innerHTML = `Waiting for ${turnPlayer.playerName} (${currentTurn})...`;
+                content.innerHTML = '';
+                return;
+            }
+            
+            title.innerHTML = `Your turn: ${currentTurn}`;
+            
+            let html = '';
+            
+            if (currentTurn === 'Cartographer') {
+                if (stateOptions.length === 0) {
+                    let available = states.filter(s => !capturedStates[s.full]);
+                    
+                    if (activeAbilities.changeCourse) {
+                        if (activeAbilities.changeCourse === 'expensive') {
+                            available.sort((a, b) => b.points - a.points);
+                            available = available.slice(0, 5);
+                        } else {
+                            available.sort((a, b) => a.points - b.points);
+                            available = available.slice(0, 5);
+                        }
+                        addLog(`🔄 Change Course active - choosing from ${activeAbilities.changeCourse} states`);
+                        activeAbilities.changeCourse = null;
+                    }
+                    
+                    if (available.length >= 3) {
+                        const shuffled = [...available].sort(() => Math.random() - 0.5);
+                        stateOptions = shuffled.slice(0, 3);
+                    }
+                }
+                
+                html = '<div class="cards">';
+                stateOptions.forEach((state, i) => {
+                    html += `<div class="card state-card ${state === currentState ? 'selected' : ''}" onclick="selectCartographerState(${i})">${state.full}<br><span style="font-size:24px;">${state.points}</span>${state.ability ? '<br><small>✨</small>' : ''}</div>`;
+                });
+                html += '</div>';
+                html += '<button onclick="confirmCartographerChoice()" ' + (!currentState ? 'disabled' : '') + '>Choose State</button>';
+            }
+            
+            else if (currentTurn === 'President-Rep') {
+                if (presidentRepLaws.length === 0) {
+                    presidentRepLaws = [
+                        { party: Math.random() < 0.5 ? 'republican' : 'democrat', selected: false },
+                        { party: Math.random() < 0.5 ? 'republican' : 'democrat', selected: false },
+                        { party: Math.random() < 0.5 ? 'republican' : 'democrat', selected: false }
+                    ];
+                }
+                html = '<div class="cards">';
+                presidentRepLaws.forEach((law, i) => {
+                    html += `<div class="card ${law.party === 'democrat' ? 'dem' : 'rep'} ${law.selected ? 'selected' : ''}" onclick="selectPresidentLaw('rep', ${i})">Law ${i+1}<br><small>${law.party}</small></div>`;
+                });
+                html += '</div>';
+                const selectedCount = presidentRepLaws.filter(l => l.selected).length;
+                html += '<button onclick="confirmPresidentChoice(\'rep\')" ' + (selectedCount !== 2 ? 'disabled' : '') + '>Keep 2 Laws (1 discarded)</button>';
+            }
+            
+            else if (currentTurn === 'President-Dem') {
+                if (presidentDemLaws.length === 0) {
+                    presidentDemLaws = [
+                        { party: Math.random() < 0.5 ? 'democrat' : 'republican', selected: false },
+                        { party: Math.random() < 0.5 ? 'democrat' : 'republican', selected: false },
+                        { party: Math.random() < 0.5 ? 'democrat' : 'republican', selected: false }
+                    ];
+                }
+                html = '<div class="cards">';
+                presidentDemLaws.forEach((law, i) => {
+                    html += `<div class="card ${law.party === 'democrat' ? 'dem' : 'rep'} ${law.selected ? 'selected' : ''}" onclick="selectPresidentLaw('dem', ${i})">Law ${i+1}<br><small>${law.party}</small></div>`;
+                });
+                html += '</div>';
+                const selectedCount = presidentDemLaws.filter(l => l.selected).length;
+                html += '<button onclick="confirmPresidentChoice(\'dem\')" ' + (selectedCount !== 2 ? 'disabled' : '') + '>Keep 2 Laws (1 discarded)</button>';
+            }
+            
+            else if (currentTurn === 'Governor-Rep') {
+                if (governorRepLaws.length === 0) {
+                    html = '<p>No laws received from President yet</p>';
+                } else {
+                    html = '<div class="cards">';
+                    governorRepLaws.forEach((law, i) => {
+                        html += `<div class="card ${law.party === 'democrat' ? 'dem' : 'rep'} ${law.selected ? 'selected' : ''}" onclick="selectGovernorLaw('rep', ${i})">Law ${i+1}<br><small>${law.party}</small></div>`;
+                    });
+                    html += '</div>';
+                    const selectedCount = governorRepLaws.filter(l => l.selected).length;
+                    html += '<button onclick="confirmGovernorChoice(\'rep\')" ' + (selectedCount !== 1 ? 'disabled' : '') + '>Choose 1 Law for Judge (1 discarded)</button>';
+                }
+            }
+            
+            else if (currentTurn === 'Governor-Dem') {
+                if (governorDemLaws.length === 0) {
+                    html = '<p>No laws received from President yet</p>';
+                } else {
+                    html = '<div class="cards">';
+                    governorDemLaws.forEach((law, i) => {
+                        html += `<div class="card ${law.party === 'democrat' ? 'dem' : 'rep'} ${law.selected ? 'selected' : ''}" onclick="selectGovernorLaw('dem', ${i})">Law ${i+1}<br><small>${law.party}</small></div>`;
+                    });
+                    html += '</div>';
+                    const selectedCount = governorDemLaws.filter(l => l.selected).length;
+                    html += '<button onclick="confirmGovernorChoice(\'dem\')" ' + (selectedCount !== 1 ? 'disabled' : '') + '>Choose 1 Law for Judge (1 discarded)</button>';
+                }
+            }
+            
+            else if (currentTurn === 'Judge') {
+                html = '<div class="cards">';
+                if (judgeRepLaw) html += `<div class="card rep ${selectedLaw === 'republican' ? 'selected' : ''}" onclick="selectJudgeLaw('republican')">Republican Law from Governor</div>`;
+                if (judgeDemLaw) html += `<div class="card dem ${selectedLaw === 'democrat' ? 'selected' : ''}" onclick="selectJudgeLaw('democrat')">Democrat Law from Governor</div>`;
+                html += '</div>';
+                html += '<button onclick="confirmJudgeChoice()" ' + (!selectedLaw ? 'disabled' : '') + '>Choose Winning Law</button>';
+            }
+            
+            content.innerHTML = html;
+        }
+        
+        function selectCartographerState(index) {
+            currentState = stateOptions[index];
+            updateActionPanel();
+        }
+        
+        function selectPresidentLaw(role, index) {
+            if (role === 'rep') {
+                presidentRepLaws[index].selected = !presidentRepLaws[index].selected;
+                const selectedCount = presidentRepLaws.filter(l => l.selected).length;
+                if (selectedCount > 2) {
+                    presidentRepLaws[index].selected = false;
+                }
+            } else {
+                presidentDemLaws[index].selected = !presidentDemLaws[index].selected;
+                const selectedCount = presidentDemLaws.filter(l => l.selected).length;
+                if (selectedCount > 2) {
+                    presidentDemLaws[index].selected = false;
+                }
+            }
+            updateActionPanel();
+        }
+        
+        function selectGovernorLaw(role, index) {
+            if (role === 'rep') {
+                governorRepLaws.forEach(l => l.selected = false);
+                governorRepLaws[index].selected = true;
+            } else {
+                governorDemLaws.forEach(l => l.selected = false);
+                governorDemLaws[index].selected = true;
+            }
+            updateActionPanel();
+        }
+        
+        function selectJudgeLaw(party) {
+            selectedLaw = party;
+            updateActionPanel();
+        }
+        
+        function confirmCartographerChoice() {
+            if (currentState) {
+                addLog(`You chose a state (hidden)`);
+                afterTurn();
+                broadcastGameState();
+            }
+        }
+        
+        function confirmPresidentChoice(role) {
+            if (role === 'rep') {
+                const keptLaws = presidentRepLaws.filter(l => l.selected);
+                if (keptLaws.length !== 2) return;
+                presidentRepLaws = keptLaws;
+                governorRepLaws = keptLaws.map(l => ({ party: l.party, selected: false }));
+                addLog(`You kept 2 laws, 1 discarded - passed to Governor-Rep`);
+            } else {
+                const keptLaws = presidentDemLaws.filter(l => l.selected);
+                if (keptLaws.length !== 2) return;
+                presidentDemLaws = keptLaws;
+                governorDemLaws = keptLaws.map(l => ({ party: l.party, selected: false }));
+                addLog(`You kept 2 laws, 1 discarded - passed to Governor-Dem`);
+            }
+            afterTurn();
+            broadcastGameState();
+        }
+        
+        function confirmGovernorChoice(role) {
+            if (role === 'rep') {
+                const keptLaw = governorRepLaws.find(l => l.selected);
+                if (!keptLaw) return;
+                judgeRepLaw = keptLaw;
+                addLog(`You chose 1 law for Judge, 1 discarded`);
+            } else {
+                const keptLaw = governorDemLaws.find(l => l.selected);
+                if (!keptLaw) return;
+                judgeDemLaw = keptLaw;
+                addLog(`You chose 1 law for Judge, 1 discarded`);
+            }
+            afterTurn();
+            broadcastGameState();
+        }
+        
+        function confirmJudgeChoice() {
+            if (selectedLaw && currentState && judgeRepLaw && judgeDemLaw) {
+                capturedStates[currentState.full] = selectedLaw;
+                
+                if (currentState.ability) {
+                    activateAbility(currentState.ability, currentState.full);
+                }
+                
+                const stateData = states.find(s => s.full === currentState.full);
+                document.getElementById('roundEndContent').innerHTML = `
+                    <h2 style="color: gold; margin-bottom: 20px;">🏆 ROUND ${currentRound} COMPLETE</h2>
+                    
+                    <div style="background: rgba(0,0,0,0.3); border-radius: 20px; padding: 20px; margin: 20px 0;">
+                        <div style="font-size: 18px; color: #ccc; margin-bottom: 5px;">STATE CAPTURED:</div>
+                        <div class="state-reveal">${currentState.full}</div>
+                        <div style="font-size: 48px; font-weight: bold; color: gold; margin: 10px 0;">${stateData.points}</div>
+                        <div style="font-size: 18px; margin-bottom: 15px;">points</div>
+                        
+                        <div class="party-badge-large ${selectedLaw}">
+                            ${selectedLaw.toUpperCase()} VICTORY
+                        </div>
+                    </div>
+                    
+                    ${stateData.ability ? `
+                        <div class="ability-info">
+                            <strong style="font-size: 16px;">✨ ABILITY: ${stateData.ability}</strong><br>
+                            <p style="margin-top: 10px;">${abilityDescriptions[stateData.ability]}</p>
+                        </div>
+                    ` : ''}
+                    
+                    <div style="display: flex; justify-content: space-around; margin-top: 20px; font-size: 20px;">
+                        <span style="color: #0047ab;">DEM: ${getScore('democrat')}</span>
+                        <span style="color: gold;">|</span>
+                        <span style="color: #b22222;">REP: ${getScore('republican')}</span>
+                    </div>
+                `;
+                document.getElementById('roundEndModal').style.display = 'flex';
+                
+                addLog(`You chose ${selectedLaw} - ${currentState.full} captured!`);
+                updateScores();
+                
+                setTimeout(() => {
+                    currentRound++;
+                    startNewRound();
+                    document.getElementById('roundEndModal').style.display = 'none';
+                }, 4000);
+                
+                broadcastGameState();
+            }
+        }
+        
+        function getScore(party) {
+            let score = 0;
+            for (let [name, p] of Object.entries(capturedStates)) {
+                if (p === party) {
+                    const state = states.find(s => s.full === name);
+                    if (state) score += state.points;
+                }
+            }
+            return score;
+        }
+        
+        function updateScores() {
+            let d = 0, r = 0;
+            for (let [name, party] of Object.entries(capturedStates)) {
+                const st = states.find(s => s.full === name);
+                if (st) {
+                    if (party === 'democrat') d += st.points;
+                    else r += st.points;
+                }
+            }
+            document.getElementById('demScore').innerHTML = d;
+            document.getElementById('repScore').innerHTML = r;
+        }
+        
+        function addLog(msg) {
+            gameLog.push(`[R${currentRound}] ${new Date().toLocaleTimeString()} - ${msg}`);
+            const log = document.getElementById('gameLog');
+            log.innerHTML = gameLog.slice(-5).map(m => `<div>${m}</div>`).join('');
+        }
+    </script>
+</body>
+</html>
