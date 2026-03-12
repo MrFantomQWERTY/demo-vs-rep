@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>DEMO VS REP · ONLINE</title>
+    <title>DEMO VS REP · ONLINE MULTIPLAYER</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -521,7 +521,7 @@
     </div>
 
     <div class="container">
-        <h1>🇺🇸 DEMO VS REP · ONLINE 🇺🇸</h1>
+        <h1>🇺🇸 DEMO VS REP · MULTIPLAYER 🇺🇸</h1>
         
         <div id="menu" class="lobby" style="text-align: center;">
             <h2>MAIN MENU</h2>
@@ -656,6 +656,7 @@
     </div>
 
     <script>
+        // ==================== GAME DATA ====================
         let players = [];
         let currentPlayerId = 1;
         let isHost = false;
@@ -678,15 +679,16 @@
         let judgeDemLaw = null;
         let selectedLaw = null;
         let isProcessing = false;
-        let roundEndTimeout = null;
-        let isLoading = false;
+        
+        // Dictator Missions (English)
         let dictatorMissions = [
-            { id: 1, name: 'Предатель', description: 'Будучи Президентом, передать губернатору закон чужой партии', completed: false },
-            { id: 2, name: 'Саботаж', description: 'Будучи Губернатором, передать судье закон чужой партии', completed: false },
-            { id: 3, name: 'Аутсайдер', description: 'Будучи Судьёй, выбрать закон за партию, которая проигрывает', completed: false },
-            { id: 4, name: 'Скупой', description: 'Будучи Картографом, выбрать самый дешёвый штат', completed: false },
-            { id: 5, name: 'Шпион', description: 'Активировать способность Investigation или Party Check', completed: false }
+            { id: 1, name: 'Traitor', description: 'As President, send a law of the opposite party to the Governor', completed: false },
+            { id: 2, name: 'Sabotage', description: 'As Governor, send a law of the opposite party to the Judge', completed: false },
+            { id: 3, name: 'Outsider', description: 'As Judge, choose a law for the losing party', completed: false },
+            { id: 4, name: 'Frugal', description: 'As Cartographer, choose the cheapest state', completed: false },
+            { id: 5, name: 'Spy', description: 'Activate Investigation or Party Check ability', completed: false }
         ];
+        
         let syncInterval = null;
         let lastSync = Date.now();
         let activeAbilities = {
@@ -698,11 +700,11 @@
         };
         
         const abilityDescriptions = {
-            'Investigation': '🔍 Посмотреть роль любого игрока',
-            'Veto': '🚫 Президент проигравшей партии сбросит на 1 закон больше в следующем раунде',
-            'Spy': '🕵️ Посмотреть следующий штат в колоде',
-            'Change Course': '🔄 Следующий Картограф выбирает из самых дорогих или дешёвых штатов',
-            'Party Check': '👁️ Узнать партию любого игрока'
+            'Investigation': '🔍 Look at any player\'s role',
+            'Veto': '🚫 The losing party\'s President will discard 1 more law next round',
+            'Spy': '🕵️ Look at the next state in the deck',
+            'Change Course': '🔄 Next Cartographer chooses from most expensive or cheapest states',
+            'Party Check': '👁️ Learn any player\'s party'
         };
         
         const states = [
@@ -758,6 +760,8 @@
             { name: 'HI', full: 'Hawaii', points: 4, ability: 'Spy' }
         ];
         
+        // ==================== NAVIGATION ====================
+        
         function showSolo() {
             document.getElementById('menu').style.display = 'none';
             document.getElementById('soloMenu').style.display = 'block';
@@ -794,6 +798,8 @@
             document.getElementById('multiMenu').style.display = 'block';
         }
         
+        // ==================== SOLO ====================
+        
         function startSoloGame() {
             const playerName = document.getElementById('soloName').value || 'You';
             const botCount = parseInt(document.getElementById('soloBots').value);
@@ -809,6 +815,8 @@
             isHost = true;
             startGame();
         }
+        
+        // ==================== MULTIPLAYER ====================
         
         function createParty() {
             const playerName = document.getElementById('hostName').value || 'Host';
@@ -934,12 +942,16 @@
             }
         }
         
+        // ==================== SYNC ====================
+        
         function startSync() {
             if (syncInterval) clearInterval(syncInterval);
-            syncInterval = setInterval(checkForUpdates, 300);
+            syncInterval = setInterval(checkForUpdates, 500);
         }
         
         function broadcastGameState() {
+            if (!partyCode) return;
+            
             const gameState = {
                 players: players,
                 partyCode: partyCode,
@@ -966,52 +978,59 @@
         }
         
         function checkForUpdates() {
+            if (!partyCode) return;
+            
             const saved = localStorage.getItem(`game_${partyCode}`);
             if (saved) {
-                const state = JSON.parse(saved);
-                if (state.timestamp > lastSync) {
-                    lastSync = state.timestamp;
-                    
-                    const oldId = currentPlayerId;
-                    const oldGameStarted = gameStarted;
-                    
-                    players = state.players;
-                    gameStarted = state.gameStarted;
-                    currentRound = state.currentRound;
-                    currentTurn = state.currentTurn;
-                    roundRoles = state.roundRoles;
-                    capturedStates = state.capturedStates;
-                    currentState = state.currentState;
-                    stateOptions = state.stateOptions || [];
-                    presidentRepLaws = state.presidentRepLaws || [];
-                    presidentDemLaws = state.presidentDemLaws || [];
-                    governorRepLaws = state.governorRepLaws || [];
-                    governorDemLaws = state.governorDemLaws || [];
-                    judgeRepLaw = state.judgeRepLaw;
-                    judgeDemLaw = state.judgeDemLaw;
-                    selectedLaw = state.selectedLaw;
-                    dictatorMissions = state.dictatorMissions || [];
-                    activeAbilities = state.activeAbilities || {};
-                    gameLog = state.gameLog || [];
-                    
-                    currentPlayerId = oldId;
-                    
-                    if (gameStarted) {
-                        document.getElementById('lobby').style.display = 'none';
-                        document.getElementById('game').style.display = 'block';
-                        updateGameDisplay();
+                try {
+                    const state = JSON.parse(saved);
+                    if (state.timestamp > lastSync) {
+                        lastSync = state.timestamp;
                         
-                        if (!oldGameStarted && gameStarted) {
-                            setTimeout(() => showRoleModal(), 500);
+                        const oldGameStarted = gameStarted;
+                        
+                        // Update all game state
+                        players = state.players || [];
+                        gameStarted = state.gameStarted || false;
+                        currentRound = state.currentRound || 1;
+                        currentTurn = state.currentTurn;
+                        roundRoles = state.roundRoles || [];
+                        capturedStates = state.capturedStates || {};
+                        currentState = state.currentState;
+                        stateOptions = state.stateOptions || [];
+                        presidentRepLaws = state.presidentRepLaws || [];
+                        presidentDemLaws = state.presidentDemLaws || [];
+                        governorRepLaws = state.governorRepLaws || [];
+                        governorDemLaws = state.governorDemLaws || [];
+                        judgeRepLaw = state.judgeRepLaw;
+                        judgeDemLaw = state.judgeDemLaw;
+                        selectedLaw = state.selectedLaw;
+                        dictatorMissions = state.dictatorMissions || [];
+                        activeAbilities = state.activeAbilities || {};
+                        gameLog = state.gameLog || [];
+                        
+                        // Update UI
+                        if (gameStarted) {
+                            document.getElementById('lobby').style.display = 'none';
+                            document.getElementById('game').style.display = 'block';
+                            updateGameDisplay();
+                            
+                            if (!oldGameStarted && gameStarted) {
+                                setTimeout(() => showRoleModal(), 500);
+                            }
+                        } else {
+                            document.getElementById('lobby').style.display = 'block';
+                            document.getElementById('game').style.display = 'none';
+                            updateLobby();
                         }
-                    } else {
-                        document.getElementById('lobby').style.display = 'block';
-                        document.getElementById('game').style.display = 'none';
-                        updateLobby();
                     }
+                } catch (e) {
+                    console.error('Sync error:', e);
                 }
             }
         }
+        
+        // ==================== GAME LOGIC ====================
         
         function startGame() {
             const roles = [
@@ -1104,15 +1123,8 @@
         }
         
         function startNewRound() {
-            console.log('Starting new round', currentRound);
-            
             document.getElementById('loadingMessage').textContent = `Preparing Round ${currentRound}...`;
             document.getElementById('loadingOverlay').style.display = 'flex';
-            
-            if (roundEndTimeout) {
-                clearTimeout(roundEndTimeout);
-                roundEndTimeout = null;
-            }
             
             const shuffled = [...turnOrder].sort(() => Math.random() - 0.5);
             roundRoles = [];
@@ -1126,8 +1138,6 @@
                     hasActed: false
                 });
             }
-            
-            console.log('Round roles:', roundRoles);
             
             turnIndex = 0;
             currentState = null;
@@ -1154,10 +1164,7 @@
         }
         
         function setCurrentTurn(role) {
-            if (isProcessing) {
-                console.log('Already processing, skipping');
-                return;
-            }
+            if (isProcessing) return;
             
             isProcessing = true;
             currentTurn = role;
@@ -1175,7 +1182,6 @@
                     isProcessing = false;
                 }
             } else {
-                console.error('No player found for role:', role);
                 isProcessing = false;
                 nextTurn();
                 return;
@@ -1186,8 +1192,6 @@
         }
         
         function doBotTurn() {
-            console.log('Bot turn:', currentTurn);
-            
             if (currentTurn === 'Cartographer') {
                 let available = states.filter(s => !capturedStates[s.full]);
                 
@@ -1287,6 +1291,7 @@
                     }, 4000);
                 }
             }
+            broadcastGameState();
         }
         
         function afterTurn() {
@@ -1358,6 +1363,7 @@
             closeBtn.style.display = 'inline-block';
             
             addLog(`🔍 Investigation used on ${player.name} - role revealed`);
+            broadcastGameState();
         }
         
         function showSpyModal() {
@@ -1449,6 +1455,7 @@
             closeBtn.style.display = 'inline-block';
             
             addLog(`👁️ Party Check used on ${player.name} - party revealed`);
+            broadcastGameState();
         }
         
         function nextTurn() {
@@ -1456,8 +1463,6 @@
             
             if (turnIndex < turnOrder.length) {
                 setCurrentTurn(turnOrder[turnIndex]);
-            } else {
-                console.log('End of turn order');
             }
             
             updateGameDisplay();
@@ -1495,6 +1500,7 @@
             
             players.forEach(player => {
                 let roleHtml = '';
+                let partyClass = player.party || '';
                 
                 if (player.id === currentPlayerId) {
                     roleHtml = `<span class="role-badge">${player.role}</span>`;
@@ -1510,13 +1516,14 @@
                 }
                 else {
                     roleHtml = `<span class="role-badge role-hidden">????</span>`;
+                    partyClass = '';
                 }
                 
                 const isTurn = roundRoles.find(r => r.role === currentTurn)?.playerId === player.id;
                 const profession = roundRoles.find(r => r.playerId === player.id)?.role || '';
                 
                 html += `
-                    <div class="player-card ${player.party || ''} ${isTurn ? 'current' : ''}">
+                    <div class="player-card ${partyClass} ${isTurn ? 'current' : ''}">
                         <div><b>${player.name}</b> ${player.isBot ? '🤖' : ''}</div>
                         ${roleHtml}
                         ${profession ? `<span class="profession-badge">${profession}</span>` : ''}
